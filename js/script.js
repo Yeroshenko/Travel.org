@@ -85,13 +85,13 @@ window.addEventListener('DOMContentLoaded', function() {
       overlay = document.querySelector('.overlay'), 
       close   = document.querySelector('.popup-close');
 
-  more.addEventListener('click', () => {
+  more.addEventListener('click', function() {
     overlay.style.display = 'block';
     this.classList.add('.fade');
 
   });
 
-  close.addEventListener('click', () => {
+  close.addEventListener('click', function() {
     overlay.style.display = 'none';
     this.classList.add('.fade');
   });
@@ -105,41 +105,105 @@ window.addEventListener('DOMContentLoaded', function() {
   };
 
   let form          = document.querySelector('.main-form'),
+      contactForm   = document.querySelector('#form'),
+      contactInput  = contactForm.getElementsByTagName('input'),
       input         = form.getElementsByTagName('input'),
       statusMessage = document.createElement('div');
       statusMessage.classList.add('status');
 
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    form.appendChild(statusMessage);
+  // Forms
 
-    let request = new XMLHttpRequest();
-
-    request.open('POST', 'server.php');
-    request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-
-    let formData = new FormData(form); 
-
-    let obj = {};
-    formData.forEach(function(value, key){
-      obj[key] = value;
+  sendForm(form, input);
+  sendForm(contactForm, contactInput);
+  
+  function sendForm(elem, inputs) {
+    elem.addEventListener('submit', function(event) {
+      event.preventDefault();
+      form.appendChild(statusMessage);
+  
+      let request = new XMLHttpRequest();
+  
+      request.open('POST', 'server.php');
+      request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+  
+      let formData = new FormData(elem); 
+  
+      let obj = {};
+      formData.forEach(function(value, key){
+        obj[key] = value;
+      });
+      let json = JSON.stringify(obj);
+  
+      request.send(json);
+      
+      request.addEventListener( 'readystatechange', function () {
+        if (request.readyState < 4) {
+          statusMessage.innerHTML = message.loading;
+        } else if(request.readyState === 4 && request.status ==200) {
+          statusMessage.innerHTML = message.success;
+        } else {
+          statusMessage.innerHTML = message.failure;
+        }
+      });
+      clearInput(inputs);
     });
-    let json = JSON.stringify(obj);
+  }
+  
+  function clearInput(inputs){
+    for (let i = 0; i < inputs.length; i++){
+      inputs[i].value = '';
+    }
+  }
 
-    request.send(json);
-    
-    request.addEventListener('readystatechange', function () {
-      if (request.readyState < 4) {
-        statusMessage.innerHTML = message.loading;
-      } else if(request.readyState === 4 && request.status ==200) {
-        statusMessage.innerHTML = message.success;
-      } else {
-        statusMessage.innerHTML = message.failure;
-      }
-    });
+  // Slider
 
-      for (let i = 0; i < input.length; i++){
-        input[i].value = '';
+  let slideIndex = 1,
+      slides   = document.querySelectorAll('.slider-item'),
+      prev     = document.querySelector('.prev'),
+      next     = document.querySelector('.next'),
+      dotsWrap = document.querySelector('.slider-dots'),
+      dots      = document.querySelectorAll('.dot');
+
+  showSlides(slideIndex);
+
+  function showSlides(n) {
+
+    // loop 
+
+    if(n > slides.length) {
+      slideIndex = 1;
+    }
+
+    if(n < 1) {
+      slideIndex = slides.length;
+    }
+
+    //show slide & dots
+
+    slides.forEach((item) => item.style.display = 'none');
+
+    dots.forEach((item) => item.classList.remove('dot-active'));
+
+    slides[slideIndex - 1]. style.display = 'block';
+    dots[slideIndex - 1]. classList.add('dot-active');
+  }
+
+  function plusSlides(n) {
+    showSlides(slideIndex += n);
+  }
+  // click on dots
+  function currentSlide(n) {
+    showSlides(slideIndex = n); 
+  }
+
+  prev.addEventListener('click', () => plusSlides(-1));
+  next.addEventListener('click', () => plusSlides(+1));
+
+  dotsWrap.addEventListener('click', function(e) {
+    for (let i = 0; i < dots.length + 1; i++) {
+      if (e.target.classList.contains('dot') && e.target == dots[i-1]) {
+        currentSlide(i);
       }
+    }
   });
 });
